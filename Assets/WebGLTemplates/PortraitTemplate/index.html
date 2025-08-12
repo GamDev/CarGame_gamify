@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8" />
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no" />
+
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%; background: black;
+      overflow: hidden;
+    }
+
+    #rotate-message {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: black;
+      color: white;
+      font-size: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      display: none;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #unity-container {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: black;
+    }
+
+    #unity-canvas {
+      width: auto;
+      height: 100vh;
+      max-width: 1080px;
+      background: black;
+      image-rendering: pixelated;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    /* Loading bar styles can be your own or default Unity styles */
+    #unity-loading-bar {
+      position: absolute;
+      bottom: 20px;
+      width: 80%;
+      max-width: 1080px;
+      height: 20px;
+      background-color: #222;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+    }
+
+    #unity-progress-bar-empty {
+      width: 100%; height: 100%;
+      background-color: #444;
+    }
+
+    #unity-progress-bar-full {
+      width: 0%;
+      height: 100%;
+      background-color: #4caf50;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="rotate-message">Please rotate your device to portrait</div>
+  <div id="unity-container">
+    <canvas id="unity-canvas" width="1080" height="1920" tabindex="-1"></canvas>
+    <div id="unity-loading-bar">
+      <div id="unity-progress-bar-empty">
+        <div id="unity-progress-bar-full"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rotateMsg = document.getElementById("rotate-message");
+    const unityContainer = document.getElementById("unity-container");
+
+    function checkOrientation() {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const portraitMode = window.matchMedia("(orientation: portrait)").matches || window.innerHeight >= window.innerWidth;
+
+      if (!isMobile || portraitMode) {
+        rotateMsg.style.display = "none";
+        unityContainer.style.display = "flex";
+      } else {
+        rotateMsg.style.display = "flex";
+        unityContainer.style.display = "none";
+      }
+    }
+
+    window.addEventListener("resize", () => setTimeout(checkOrientation, 200));
+    window.addEventListener("orientationchange", () => setTimeout(checkOrientation, 200));
+    window.addEventListener("load", () => setTimeout(checkOrientation, 500));
+
+    // Unity WebGL config
+    var canvas = document.getElementById("unity-canvas");
+    var loadingBar = document.getElementById("unity-loading-bar");
+    var progressBarFull = document.getElementById("unity-progress-bar-full");
+
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    var config = {
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "{{{ COMPANY_NAME }}}",
+      productName: "{{{ PRODUCT_NAME }}}",
+      productVersion: "{{{ PRODUCT_VERSION }}}",
+      // THIS disables Unity's automatic canvas resizing to match CSS size
+      matchWebGLToCanvasSize: false,
+      devicePixelRatio: 1
+    };
+
+    loadingBar.style.display = "block";
+
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+        progressBarFull.style.width = 100 * progress + "%";
+      }).then((unityInstance) => {
+        loadingBar.style.display = "none";
+      }).catch((message) => {
+        alert(message);
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>
